@@ -35,3 +35,12 @@ variable "tags" {
   description = "Additional tags to merge"
   default     = {}
 }
+
+variable "subnets" {
+  type = map(object({
+    name = string
+    cidr = string
+    az   = string
+  }))
+  description = "Map of subnets to create"
+}
