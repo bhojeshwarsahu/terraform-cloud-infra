@@ -12,4 +12,7 @@ resource "aws_vpc" "main" {
     },
     var.tags
   )
+  # lifecycle {
+  #   prevent_destroy = var.prevent_destroy
+  # }
 }
