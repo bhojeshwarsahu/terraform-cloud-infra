@@ -19,7 +19,7 @@ variable "instance_tenancy" {
   description = "VPC default tenancy"
   default     = "default"
   validation {
-    condition     = contains(["default", "dedicated"], var.instance_tenancy)
+    condition     = contains(["default","dedicated"], var.instance_tenancy)
     error_message = "instance_tenancy must be 'default' or 'dedicated'"
   }
 }
