@@ -31,9 +31,6 @@ module "nat" {
   create_per_az     = true
   tags              = var.tags
 }
-locals {
-  nat_ids = module.nat.nat_gateway_ids
-}
 module "routes" {
   source = "../../modules/route"
 
