@@ -21,7 +21,7 @@ module "igw" {
   tags        = merge(var.tags, { Component = "networking", Role = "igw" })
 }
 locals {
-  public_subnet_ids = { for k, id in module.subnets.subnet_ids : k => id if startswith(k, "public") }
+  public_subnet_ids  = { for k, id in module.subnets.subnet_ids : k => id if startswith(k, "public") }
   private_subnet_ids = { for k, id in module.subnets.subnet_ids : k => id if startswith(k, "private") }
 }
 module "nat" {
@@ -61,4 +61,38 @@ module "routes" {
       ]
     }
   }
+}
+
+# Upload an existing public key from local file (recommended)
+# module "keypair" {
+#   source          = "../../modules/keypair"
+#   name            = "${var.environment}-ssh-key"
+#   public_key_path = "${pathexpand("~/.ssh/id_rsa.pub")}"
+#   # public_key_path = "~/.ssh/id_rsa.pub"   # or relative path to repo
+#   tags            = merge(var.tags, { Component = "ssh" })
+# }
+
+module "keypair" {
+  source          = "../../modules/keypair"
+  name            = "${var.environment}-ssh-key"
+  public_key_path = pathexpand("~/.ssh/id_rsa.pub")
+  tags            = merge(var.tags, { Component = "ssh" })
+}
+
+# OR — generate a keypair (not recommended for production because of private key handling)
+# module "keypair_generated" {
+#   source           = "../../modules/keypair"
+#   name             = "${var.environment}-auto-key"
+#   generate_key     = true
+#   rsa_bits         = 4096
+#   save_private_key = true
+#   private_key_path = "../secrets/${var.environment}_auto_key.pem" # make sure folder exists and is protected
+#   tags             = merge(var.tags, { Component = "ssh" })
+# }
+
+module "ssm" {
+  source           = "../../modules/ssm"
+  environment      = var.environment
+  attach_cloudwatch = true    # optional, set false if you don't want CloudWatchAgentServerPolicy
+  tags             = merge(var.tags, { Component = "ssm" })
 }
