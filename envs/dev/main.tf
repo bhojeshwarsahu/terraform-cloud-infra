@@ -91,8 +91,58 @@ module "keypair" {
 # }
 
 module "ssm" {
-  source           = "../../modules/ssm"
-  environment      = var.environment
-  attach_cloudwatch = true    # optional, set false if you don't want CloudWatchAgentServerPolicy
-  tags             = merge(var.tags, { Component = "ssm" })
+  source            = "../../modules/ssm"
+  environment       = var.environment
+  attach_cloudwatch = true # optional, set false if you don't want CloudWatchAgentServerPolicy
+  tags              = merge(var.tags, { Component = "ssm" })
+}
+
+module "eks" {
+  source = "../../modules/eks"
+
+  cluster_name       = "dev-eks-cluster"
+  environment        = var.environment
+  region             = "us-east-1"
+  vpc_id             = module.vpc.vpc_id
+  private_subnet_ids = values({ for k, id in module.subnets.subnet_ids : k => id if startswith(k, "private") })
+  
+  # REMOVED unused public_subnet_ids to clean up
+  
+  endpoint_private_access = true
+  endpoint_public_access  = false
+  public_access_cidrs     = []
+
+  node_groups = {
+    default = {
+      instance_types   = ["t3.medium"]
+      desired_capacity = 2
+      min_capacity     = 1
+      max_capacity     = 3
+      key_name         = null
+      labels           = { role = "worker" }
+      tags             = { Purpose = "eks-node" }
+      additional_iam_policies = [
+        "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore",
+        "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
+      ]
+    }
+  }
+
+  enable_irsa            = true
+  create_fargate_profile = false
+  tags                   = merge(var.tags, { Component = "eks" })
+}
+
+module "vpc_endpoints" {
+  source = "../../modules/vpc-endpoints"
+
+  vpc_id             = module.vpc.vpc_id
+  private_subnet_ids = values(local.private_subnet_ids)
+  region             = "us-east-1"
+  environment        = var.environment
+  vpc_cidr_blocks    = [var.vpc_cidr]
+
+  # ADDED: Pass the private route table ID so the S3 Gateway Endpoint can attach to it
+  # Note: This assumes your route module outputs "route_table_ids" as a map
+  private_route_table_ids = [module.routes.route_table_ids["private"]]
 }

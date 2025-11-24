@@ -37,10 +37,11 @@ variable "tags" {
 }
 
 variable "subnets" {
+  description = "Map of subnets to create"
   type = map(object({
     name = string
     cidr = string
     az   = string
+    tags = optional(map(string), {})
   }))
-  description = "Map of subnets to create"
 }
